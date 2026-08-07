@@ -45,13 +45,15 @@ export default function ApprovalDashboard() {
 
   const [refreshing, setRefreshing] = useState(false);
 
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
+
   const fetchApprovals = async () => {
     setRefreshing(true);
     const start = Date.now();
     try {
       const [resPending, resHist] = await Promise.all([
-        fetch(`/api/approval/pending?t=${start}`),
-        fetch(`/api/approval/history?t=${start}`)
+        fetch(`${API_BASE}/api/approval/pending?t=${start}`),
+        fetch(`${API_BASE}/api/approval/history?t=${start}`)
       ]);
 
       if (resPending.ok) {

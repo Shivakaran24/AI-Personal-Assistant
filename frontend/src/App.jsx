@@ -49,11 +49,12 @@ function AppContent() {
     }
   };
 
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
   const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
 
   const fetchConversations = async () => {
     try {
-      const res = await fetch('/api/chat/conversations', {
+      const res = await fetch(`${API_BASE}/api/chat/conversations`, {
         headers: { ...authHeaders }
       });
       if (res.ok) {
@@ -68,7 +69,7 @@ function AppContent() {
   const fetchMessagesForConv = async (convId) => {
     if (!convId) return;
     try {
-      const res = await fetch(`/api/chat/conversations/${convId}/messages`, {
+      const res = await fetch(`${API_BASE}/api/chat/conversations/${convId}/messages`, {
         headers: { ...authHeaders }
       });
       if (res.ok) {
@@ -94,7 +95,7 @@ function AppContent() {
 
   const handleDeleteConversation = async (convId) => {
     try {
-      await fetch(`/api/chat/conversations/${convId}`, { 
+      await fetch(`${API_BASE}/api/chat/conversations/${convId}`, { 
         method: 'DELETE',
         headers: { ...authHeaders }
       });
@@ -103,7 +104,7 @@ function AppContent() {
       }
       fetchConversations();
     } catch (e) {
-      console.error("Delete conversation error:", e);
+      console.error("Failed to delete conversation:", e);
     }
   };
 
@@ -115,7 +116,7 @@ function AppContent() {
     setMessages(prev => [...prev, tempUserMsg]);
 
     try {
-      const res = await fetch('/api/chat/stream', {
+      const res = await fetch(`${API_BASE}/api/chat/stream`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

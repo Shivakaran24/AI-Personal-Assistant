@@ -1,0 +1,64 @@
+# ==============================================================================
+# ENVIRONMENT & SENSITIVE KEYS (EXCLUDED FROM GITHUB)
+# ==============================================================================
+.env
+.env.*
+*.env
+.env.example
+.env.production.example
+*.key
+*.pem
+
+# ==============================================================================
+# PYTHON DEPENDENCIES & CACHES
+# ==============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# ==============================================================================
+# NODE.JS & FRONTEND BUILD ARTIFACTS
+# ==============================================================================
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+build/
+frontend/build/
+.npm
+.eslintcache
+.vite/
+
+# ==============================================================================
+# LOCAL STORAGE, DATABASE & UPLOADED DOCUMENTS
+# ==============================================================================
+uploaded_documents/
+generated_docs/
+*.sqlite
+*.sqlite3
+*.db
+.vector_cache.json
+*.log
+logs/
+
+# ==============================================================================
+# OS & IDE TEMP FILES
+# ==============================================================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

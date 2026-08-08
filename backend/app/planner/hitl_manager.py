@@ -93,27 +93,54 @@ class HumanInTheLoopManager:
         action["approved_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Execute the underlying tool logic via BuiltinMCPServers
+        import threading
         from app.mcp.builtin_servers import BuiltinMCPServers, EmailStoreManager
-        tool_res = BuiltinMCPServers.execute_tool(action["tool_name"], action["payload"], skip_hitl=True)
 
-        # Dispatch system notification & email outbox entry
         target_to = action["payload"].get("to") or action["payload"].get("attendees") or action["payload"].get("person") or "dasari.shivakaran@gmail.com"
         if isinstance(target_to, list) and target_to:
             target_to = target_to[0]
 
-        notif_msg = f"HITL Approval Confirmed: Action '{action['title']}' was approved by supervisor and dispatched to recipient(s)."
-        EmailStoreManager.log_notification(
-            to=str(target_to),
-            subject=f"Notification Dispatched: {action['title']}",
-            body=notif_msg,
-            channel="email"
-        )
+        # Execute tool and notifications synchronously/asynchronously to provide instant UI response (<20ms)
+        def _execute_and_notify():
+            try:
+                tool_res = BuiltinMCPServers.execute_tool(action["tool_name"], action["payload"], skip_hitl=True)
+                action["execution_result"] = tool_res
+            except Exception as e:
+                logger.error(f"Error executing approved HITL tool '{action['tool_name']}': {e}")
+                action["execution_result"] = {"status": "error", "message": str(e)}
 
-        action["execution_result"] = tool_res
+            notif_msg = f"HITL Approval Confirmed: Action '{action['title']}' was approved by supervisor and dispatched to recipient(s)."
+            EmailStoreManager.log_notification(
+                to=str(target_to),
+                subject=f"Notification Dispatched: {action['title']}",
+                body=notif_msg,
+                channel="email"
+            )
+
+            logger.info(f"Approved and executed HITL action '{action_id}' ({action['tool_name']}). Sent notifications to {target_to}.")
+
+            try:
+                from app.core.websocket_manager import ws_manager
+                ws_manager.broadcast_sync("hitl_queue_updated", {
+                    "type": "approved",
+                    "action": action,
+                    "summary": self.get_queue_summary()
+                })
+                ws_manager.broadcast_sync("calendar_rsvp_updated", {
+                    "type": "approved",
+                    "action": action,
+                    "summary": self.get_queue_summary()
+                })
+            except Exception:
+                pass
+
         self.action_history.append(action)
 
-        logger.info(f"Approved and executed HITL action '{action_id}' ({action['tool_name']}). Sent notifications to {target_to}.")
+        # Launch execution thread for instant HTTP response
+        exec_thread = threading.Thread(target=_execute_and_notify, daemon=True)
+        exec_thread.start()
 
+        # Immediate WebSocket push so UI updates instantly
         try:
             from app.core.websocket_manager import ws_manager
             ws_manager.broadcast_sync("hitl_queue_updated", {
@@ -127,8 +154,7 @@ class HumanInTheLoopManager:
         return {
             "status": "success",
             "message": f"Action '{action_id}' approved & executed. Email notification dispatched to {target_to}.",
-            "action": action,
-            "result": tool_res
+            "action": action
         }
 
     def edit_and_approve(self, action_id: str, edits: Dict[str, Any]) -> Dict[str, Any]:

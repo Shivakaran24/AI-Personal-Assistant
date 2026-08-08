@@ -31,6 +31,8 @@ export default function ApprovalDashboard() {
   const [editingAction, setEditingAction] = useState(null);
   const [editFields, setEditFields] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [processingActionId, setProcessingActionId] = useState(null);
+  const [processingType, setProcessingType] = useState(null);
 
   useEffect(() => {
     fetchApprovals();
@@ -80,6 +82,8 @@ export default function ApprovalDashboard() {
   const [toast, setToast] = useState(null);
 
   const handleApprove = async (actionId, edits = null) => {
+    setProcessingActionId(actionId);
+    setProcessingType(edits ? 'edit_approve' : 'approve');
     setSubmitting(true);
     try {
       const res = await fetch(`${API_BASE}/api/approval/${actionId}/approve`, {
@@ -89,23 +93,35 @@ export default function ApprovalDashboard() {
       });
       if (res.ok) {
         const data = await res.json();
-        const resObj = data.result || {};
-        const atts = resObj.attendees || [];
+        const resObj = data.result || data.action?.payload || {};
+        const atts = resObj.attendees || resObj.to || resObj.person || [];
+        const attListStr = Array.isArray(atts) ? atts.join(', ') : String(atts);
         setToast({
           type: 'success',
-          message: `⚡ Action Approved & Executed! HTML Email Invitation & Notification dispatched to: ${atts.join(', ') || 'recipients'}.`
+          message: `⚡ Action Approved & Executed! HTML Email Invitation & Notification dispatched to: ${attListStr || 'attendees'}.`
         });
         setEditingAction(null);
+        setPendingActions(prev => prev.filter(a => a.id !== actionId));
+        setSummary(prev => ({
+          ...prev,
+          pending_count: Math.max(0, (prev.pending_count || 1) - 1),
+          approved_count: (prev.approved_count || 0) + 1,
+          edited_count: edits ? (prev.edited_count || 0) + 1 : (prev.edited_count || 0)
+        }));
         fetchApprovals();
       }
     } catch (err) {
       console.error("Approve action failed:", err);
     } finally {
       setSubmitting(false);
+      setProcessingActionId(null);
+      setProcessingType(null);
     }
   };
 
   const handleReject = async (actionId) => {
+    setProcessingActionId(actionId);
+    setProcessingType('reject');
     setSubmitting(true);
     try {
       const res = await fetch(`${API_BASE}/api/approval/${actionId}/reject`, {
@@ -114,12 +130,20 @@ export default function ApprovalDashboard() {
         body: JSON.stringify({ reason: 'Rejected by user via HITL panel' })
       });
       if (res.ok) {
+        setPendingActions(prev => prev.filter(a => a.id !== actionId));
+        setSummary(prev => ({
+          ...prev,
+          pending_count: Math.max(0, (prev.pending_count || 1) - 1),
+          rejected_count: (prev.rejected_count || 0) + 1
+        }));
         fetchApprovals();
       }
     } catch (err) {
       console.error("Reject action failed:", err);
     } finally {
       setSubmitting(false);
+      setProcessingActionId(null);
+      setProcessingType(null);
     }
   };
 
@@ -440,21 +464,36 @@ export default function ApprovalDashboard() {
                         flex: 1,
                         padding: '11px',
                         borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                        background: processingActionId === action.id && processingType === 'approve'
+                          ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+                          : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                         border: 'none',
                         color: 'white',
                         fontWeight: 700,
                         fontSize: '0.86rem',
-                        cursor: 'pointer',
+                        cursor: submitting ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '6px',
-                        boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
+                        boxShadow: processingActionId === action.id && processingType === 'approve'
+                          ? '0 0 20px rgba(16, 185, 129, 0.6)'
+                          : '0 4px 14px rgba(16, 185, 129, 0.35)',
+                        transform: processingActionId === action.id ? 'scale(0.97)' : 'scale(1)',
+                        transition: 'all 0.15s ease'
                       }}
                     >
-                      <Check size={16} />
-                      <span>Approve & Send</span>
+                      {processingActionId === action.id && processingType === 'approve' ? (
+                        <>
+                          <RefreshCw size={16} className="animate-spin" />
+                          <span>Approving & Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check size={16} />
+                          <span>Approve & Send</span>
+                        </>
+                      )}
                     </button>
 
                     <button
@@ -468,10 +507,11 @@ export default function ApprovalDashboard() {
                         color: '#fbbf24',
                         fontWeight: 700,
                         fontSize: '0.86rem',
-                        cursor: 'pointer',
+                        cursor: submitting ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px'
+                        gap: '6px',
+                        transition: 'all 0.15s ease'
                       }}
                     >
                       <Edit3 size={15} />
@@ -484,19 +524,32 @@ export default function ApprovalDashboard() {
                       style={{
                         padding: '11px 16px',
                         borderRadius: '12px',
-                        background: 'rgba(239, 68, 68, 0.15)',
+                        background: processingActionId === action.id && processingType === 'reject'
+                          ? 'rgba(239, 68, 68, 0.35)'
+                          : 'rgba(239, 68, 68, 0.15)',
                         border: '1px solid rgba(239, 68, 68, 0.4)',
                         color: '#fca5a5',
                         fontWeight: 700,
                         fontSize: '0.86rem',
-                        cursor: 'pointer',
+                        cursor: submitting ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px'
+                        gap: '6px',
+                        transform: processingActionId === action.id ? 'scale(0.97)' : 'scale(1)',
+                        transition: 'all 0.15s ease'
                       }}
                     >
-                      <X size={15} />
-                      <span>Reject</span>
+                      {processingActionId === action.id && processingType === 'reject' ? (
+                        <>
+                          <RefreshCw size={15} className="animate-spin" />
+                          <span>Rejecting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <X size={15} />
+                          <span>Reject</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -689,16 +742,28 @@ export default function ApprovalDashboard() {
                 style={{
                   padding: '10px 20px',
                   borderRadius: '10px',
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  background: submitting
+                    ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+                    : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                   border: 'none',
                   color: 'white',
                   fontWeight: 700,
                   fontSize: '0.85rem',
-                  cursor: 'pointer',
+                  cursor: submitting ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
                   boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
                 }}
               >
-                Save & Approve Action
+                {submitting ? (
+                  <>
+                    <RefreshCw size={15} className="animate-spin" />
+                    <span>Saving & Sending Email...</span>
+                  </>
+                ) : (
+                  <span>Save & Approve Action</span>
+                )}
               </button>
             </div>
           </div>

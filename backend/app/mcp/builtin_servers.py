@@ -822,7 +822,7 @@ class BuiltinMCPServers:
             if html_body:
                 msg.attach(MIMEText(html_body, 'html'))
 
-            server = smtplib.SMTP(smtp_server, port)
+            server = smtplib.SMTP(smtp_server, port, timeout=6)
             server.starttls()
             server.login(email_user, email_pass.replace(" ", ""))
             text = msg.as_string()

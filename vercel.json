@@ -1,8 +1,16 @@
 {
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://ai-personal-assistant-0l09.onrender.com/api/:path*"
+      "source": "/api/(.*)",
+      "destination": "https://ai-personal-assistant-0l09.onrender.com/api/$1"
+    },
+    {
+      "source": "/api",
+      "destination": "https://ai-personal-assistant-0l09.onrender.com/api"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

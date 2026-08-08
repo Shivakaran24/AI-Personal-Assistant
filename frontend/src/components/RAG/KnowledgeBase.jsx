@@ -17,6 +17,7 @@ import {
   RefreshCw 
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { API_BASE } from '../../config/api';
 
 export default function KnowledgeBase() {
   const { token } = useAuth();
@@ -44,7 +45,7 @@ export default function KnowledgeBase() {
     setRefreshing(true);
     const start = Date.now();
     try {
-      const res = await fetch(`/api/documents?t=${start}`, { headers: authHeaders });
+      const res = await fetch(`${API_BASE}/api/documents?t=${start}`, { headers: authHeaders });
       if (res.ok) {
         const data = await res.json();
         setDocuments(data || []);
@@ -65,7 +66,7 @@ export default function KnowledgeBase() {
     formData.append('file', file);
 
     try {
-      const res = await fetch('/api/documents/upload', {
+      const res = await fetch(`${API_BASE}/api/documents/upload`, {
         method: 'POST',
         headers: authHeaders,
         body: formData
@@ -106,7 +107,7 @@ export default function KnowledgeBase() {
 
   const handleDeleteDoc = async (id) => {
     try {
-      await fetch(`/api/documents/${id}`, { 
+      await fetch(`${API_BASE}/api/documents/${id}`, { 
         method: 'DELETE',
         headers: authHeaders
       });
@@ -122,7 +123,7 @@ export default function KnowledgeBase() {
     if (!searchQuery.trim()) return;
     setSearching(true);
     try {
-      const res = await fetch('/api/documents/query', {
+      const res = await fetch(`${API_BASE}/api/documents/query`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

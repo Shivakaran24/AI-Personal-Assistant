@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../../config/api';
 import { Terminal, Server, Play, CheckCircle, Code, Layers, RefreshCw } from 'lucide-react';
 
 export default function ToolExplorer({ onExecuteTool, currentConvId }) {
@@ -20,8 +21,8 @@ export default function ToolExplorer({ onExecuteTool, currentConvId }) {
     const start = Date.now();
     try {
       const [tRes, sRes] = await Promise.all([
-        fetch(`/api/tools?t=${start}`),
-        fetch(`/api/mcp/servers?t=${start}`)
+        fetch(`${API_BASE}/api/tools?t=${start}`),
+        fetch(`${API_BASE}/api/mcp/servers?t=${start}`)
       ]);
       const tData = await tRes.json();
       const sData = await sRes.json();
@@ -63,7 +64,7 @@ export default function ToolExplorer({ onExecuteTool, currentConvId }) {
         }
       }
 
-      const res = await fetch('/api/tools/invoke', {
+      const res = await fetch(`${API_BASE}/api/tools/invoke`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

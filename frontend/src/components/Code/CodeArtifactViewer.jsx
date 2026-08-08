@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../../config/api';
 import { Code, Terminal, Copy, Check, Play } from 'lucide-react';
 
 export default function CodeArtifactViewer() {
@@ -22,7 +23,7 @@ print("Golden Ratio Approximation:", fib_15[-1] / fib_15[-2])
   const handleRunCode = async () => {
     setRunning(true);
     try {
-      const res = await fetch('/api/tools/invoke', {
+      const res = await fetch(`${API_BASE}/api/tools/invoke`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

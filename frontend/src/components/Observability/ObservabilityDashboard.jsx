@@ -3,6 +3,7 @@ import {
   Activity, Cpu, DollarSign, Zap, Database, CheckCircle2, 
   AlertTriangle, RefreshCw, BarChart2, Shield, Layers, Clock, TrendingUp 
 } from 'lucide-react';
+import { API_BASE } from '../../config/api';
 
 export default function ObservabilityDashboard() {
   const [telemetry, setTelemetry] = useState(null);
@@ -13,7 +14,7 @@ export default function ObservabilityDashboard() {
     setRefreshing(true);
     const start = Date.now();
     try {
-      const res = await fetch(`/api/telemetry/stats?t=${start}`);
+      const res = await fetch(`${API_BASE}/api/telemetry/stats?t=${start}`);
       if (res.ok) {
         const data = await res.json();
         setTelemetry(data);

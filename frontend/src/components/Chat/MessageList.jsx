@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../../config/api';
 import ToolCallBadge from './ToolCallBadge';
 import InteractiveMeetingForm from '../Calendar/InteractiveMeetingForm';
 import A2UIRenderer from './A2UIRenderer';
@@ -11,7 +12,7 @@ export default function MessageList({ messages, loading, onQuickStarterSelect })
   const handleMessageRSVP = async (eventId, eventTitle, action) => {
     setRespondingId(`${eventId}-${action}`);
     try {
-      const res = await fetch('/api/calendar/respond', {
+      const res = await fetch(`${API_BASE}/api/calendar/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

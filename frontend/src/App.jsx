@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from './config/api';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPortal from './components/Auth/AuthPortal';
 import Sidebar from './components/Sidebar';
@@ -32,14 +33,13 @@ function AppContent() {
     if (user && token) {
       fetchConversations();
       fetchPendingCount();
-      const interval = setInterval(fetchPendingCount, 10000);
       return () => clearInterval(interval);
     }
   }, [user, token]);
 
   const fetchPendingCount = async () => {
     try {
-      const res = await fetch('/api/approval/pending');
+      const res = await fetch(`${API_BASE}/api/approval/pending`);
       if (res.ok) {
         const data = await res.json();
         setPendingCount(data.summary?.pending_count || (data.pending_actions || []).length);
@@ -49,7 +49,6 @@ function AppContent() {
     }
   };
 
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
   const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
 
   const fetchConversations = async () => {

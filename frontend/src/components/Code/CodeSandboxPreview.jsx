@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../../config/api';
 import { Code, Terminal, Copy, Check, Play, Eye, RefreshCw, Layers } from 'lucide-react';
 
 const TEMPLATES = {
@@ -83,7 +84,7 @@ export default function CodeSandboxPreview() {
   const handleRunPython = async () => {
     setRunning(true);
     try {
-      const res = await fetch('/api/tools/invoke', {
+      const res = await fetch(`${API_BASE}/api/tools/invoke`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_BASE } from '../config/api';
 
 const AuthContext = createContext();
 
@@ -15,8 +16,6 @@ export function AuthProvider({ children }) {
       setLoading(false);
     }
   }, [token]);
-
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
   const verifyToken = async (authToken) => {
     try {

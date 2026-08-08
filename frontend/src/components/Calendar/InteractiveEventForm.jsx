@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../../config/api';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -47,7 +48,7 @@ export default function InteractiveEventForm({
 
     try {
       const attList = formData.attendees.split(',').map(a => a.trim()).filter(Boolean);
-      const res = await fetch('/api/calendar/create-event', {
+      const res = await fetch(`${API_BASE}/api/calendar/create-event`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

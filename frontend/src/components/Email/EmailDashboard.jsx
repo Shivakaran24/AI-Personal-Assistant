@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   Edit3
 } from 'lucide-react';
+import { API_BASE } from '../../config/api';
 
 export default function EmailDashboard() {
   const [activeSubTab, setActiveSubTab] = useState('inbox'); // 'inbox' | 'compose' | 'drafts' | 'notifications'
@@ -51,7 +52,7 @@ export default function EmailDashboard() {
     const start = Date.now();
     try {
       const q = inboxQuery ? encodeURIComponent(inboxQuery) : 'all';
-      const res = await fetch(`/api/email/inbox?query=${q}&limit=10&t=${start}`);
+      const res = await fetch(`${API_BASE}/api/email/inbox?query=${q}&limit=10&t=${start}`);
       if (res.ok) {
         const data = await res.json();
         setEmails(data.emails || []);
@@ -67,7 +68,7 @@ export default function EmailDashboard() {
     setDraftsLoading(true);
     const start = Date.now();
     try {
-      const res = await fetch(`/api/email/drafts?t=${start}`);
+      const res = await fetch(`${API_BASE}/api/email/drafts?t=${start}`);
       if (res.ok) {
         const data = await res.json();
         setDrafts(data.drafts || []);
@@ -81,7 +82,7 @@ export default function EmailDashboard() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await fetch('/api/email/notifications');
+      const res = await fetch(`${API_BASE}/api/email/notifications`);
       if (res.ok) {
         const data = await res.json();
         setNotifications(data.notifications || []);
@@ -95,7 +96,7 @@ export default function EmailDashboard() {
     if (!composeTo || !composeBody) return;
     setSending(true);
     try {
-      const res = await fetch('/api/email/draft', {
+      const res = await fetch(`${API_BASE}/api/email/draft`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -129,7 +130,7 @@ export default function EmailDashboard() {
     setSendResult(null);
 
     try {
-      const res = await fetch('/api/email/send', {
+      const res = await fetch(`${API_BASE}/api/email/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -168,7 +169,7 @@ export default function EmailDashboard() {
 
   const handleDeleteDraft = async (draftId) => {
     try {
-      const res = await fetch(`/api/email/drafts/${draftId}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/email/drafts/${draftId}`, { method: 'DELETE' });
       if (res.ok) {
         fetchDrafts();
       }

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../../config/api';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -59,7 +60,7 @@ export default function InteractiveMeetingForm({
     setSubmitResult(null);
 
     try {
-      const res = await fetch('/api/calendar/schedule-meeting', {
+      const res = await fetch(`${API_BASE}/api/calendar/schedule-meeting`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

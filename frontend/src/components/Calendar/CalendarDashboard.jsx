@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 
 import { wsService } from '../../services/websocket';
+import { API_BASE } from '../../config/api';
 
 export default function CalendarDashboard() {
   const [metrics, setMetrics] = useState({
@@ -74,7 +75,7 @@ export default function CalendarDashboard() {
     setLoading(true);
     const start = Date.now();
     try {
-      const res = await fetch(`/api/calendar/dashboard?t=${start}`);
+      const res = await fetch(`${API_BASE}/api/calendar/dashboard?t=${start}`);
       if (res.ok) {
         const data = await res.json();
         setMetrics(data.dashboard_metrics || {});
@@ -105,7 +106,7 @@ export default function CalendarDashboard() {
       if (availDate) params.append('date', availDate);
       if (availTime) params.append('start_time', availTime);
 
-      const res = await fetch(`/api/calendar/availability?${params.toString()}`);
+      const res = await fetch(`${API_BASE}/api/calendar/availability?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setAvailResult(data);
@@ -119,7 +120,7 @@ export default function CalendarDashboard() {
 
   const handleCancelEvent = async (eventId) => {
     try {
-      const res = await fetch('/api/calendar/manage', {
+      const res = await fetch(`${API_BASE}/api/calendar/manage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event_id: eventId, action: 'cancel' })
@@ -144,7 +145,7 @@ export default function CalendarDashboard() {
 
   const handleClearHistory = async () => {
     try {
-      const res = await fetch('/api/calendar/clear', { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/calendar/clear`, { method: 'DELETE' });
       if (res.ok) {
         setMetrics({
           total_events: 0,
@@ -173,7 +174,7 @@ export default function CalendarDashboard() {
   const handleRSVPResponse = async (eventId, action) => {
     setRespondingId(`${eventId}-${action}`);
     try {
-      const res = await fetch('/api/calendar/respond', {
+      const res = await fetch(`${API_BASE}/api/calendar/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

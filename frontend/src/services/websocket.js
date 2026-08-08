@@ -20,11 +20,10 @@ class WebSocketService {
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
-    // In dev mode (Vite on port 3000/5173), direct to 8000. In Docker/Nginx production, use window.location.host
     const isLocalDev = window.location.port === '5173' || (window.location.port === '3000' && window.location.hostname === 'localhost');
     const wsUrl = isLocalDev
       ? `${protocol}//${window.location.hostname}:8000/api/ws`
-      : `${protocol}//${host}/api/ws`;
+      : `${protocol}//ai-personal-assistant-0l09.onrender.com/api/ws`;
 
     try {
       this.ws = new WebSocket(wsUrl);

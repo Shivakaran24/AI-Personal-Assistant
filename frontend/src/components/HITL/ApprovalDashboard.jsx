@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 
 import { wsService } from '../../services/websocket';
+import { API_BASE } from '../../config/api';
 
 export default function ApprovalDashboard() {
   const [pendingActions, setPendingActions] = useState([]);
@@ -44,8 +45,6 @@ export default function ApprovalDashboard() {
   }, []);
 
   const [refreshing, setRefreshing] = useState(false);
-
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
   const fetchApprovals = async () => {
     setRefreshing(true);
@@ -83,7 +82,7 @@ export default function ApprovalDashboard() {
   const handleApprove = async (actionId, edits = null) => {
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/approval/${actionId}/approve`, {
+      const res = await fetch(`${API_BASE}/api/approval/${actionId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ edits })
@@ -109,7 +108,7 @@ export default function ApprovalDashboard() {
   const handleReject = async (actionId) => {
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/approval/${actionId}/reject`, {
+      const res = await fetch(`${API_BASE}/api/approval/${actionId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: 'Rejected by user via HITL panel' })

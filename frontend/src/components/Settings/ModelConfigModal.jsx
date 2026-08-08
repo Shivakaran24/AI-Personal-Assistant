@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE } from '../../config/api';
 import { X, Key, Cpu, Check } from 'lucide-react';
 
 export default function ModelConfigModal({ isOpen, onClose, selectedModel, setSelectedModel }) {
@@ -9,7 +10,7 @@ export default function ModelConfigModal({ isOpen, onClose, selectedModel, setSe
 
   useEffect(() => {
     if (isOpen) {
-      fetch('/api/settings')
+      fetch(`${API_BASE}/api/settings`)
         .then(res => res.json())
         .then(data => {
           setOllamaUrl(data.ollama_base_url || 'http://localhost:11434');
@@ -22,7 +23,7 @@ export default function ModelConfigModal({ isOpen, onClose, selectedModel, setSe
 
   const handleSave = async () => {
     try {
-      await fetch('/api/settings', {
+      await fetch(`${API_BASE}/api/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

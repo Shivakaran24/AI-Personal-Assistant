@@ -3,7 +3,7 @@ import {
   Activity, Cpu, DollarSign, Zap, Database, CheckCircle2, 
   AlertTriangle, RefreshCw, BarChart2, Shield, Layers, Clock, TrendingUp 
 } from 'lucide-react';
-import { API_BASE } from '../../config/api';
+import { API_BASE } from '../../config/api.js';
 
 export default function ObservabilityDashboard() {
   const [telemetry, setTelemetry] = useState(null);

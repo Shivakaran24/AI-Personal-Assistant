@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 import { wsService } from '../../services/websocket';
-import { API_BASE } from '../../config/api';
+import { API_BASE } from '../../config/api.js';
 
 export default function ApprovalDashboard() {
   const [pendingActions, setPendingActions] = useState([]);

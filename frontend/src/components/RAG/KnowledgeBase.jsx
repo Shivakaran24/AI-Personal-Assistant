@@ -17,7 +17,7 @@ import {
   RefreshCw 
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { API_BASE } from '../../config/api';
+import { API_BASE } from '../../config/api.js';
 
 export default function KnowledgeBase() {
   const { token } = useAuth();

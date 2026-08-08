@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE } from './config/api';
+import { API_BASE } from './config/api.js';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPortal from './components/Auth/AuthPortal';
 import Sidebar from './components/Sidebar';

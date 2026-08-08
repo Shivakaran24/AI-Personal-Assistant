@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_BASE } from '../../config/api';
+import { API_BASE } from '../../config/api.js';
 import ToolCallBadge from './ToolCallBadge';
 import InteractiveMeetingForm from '../Calendar/InteractiveMeetingForm';
 import A2UIRenderer from './A2UIRenderer';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE } from '../../config/api';
+import { API_BASE } from '../../config/api.js';
 import { X, Key, Cpu, Check } from 'lucide-react';
 
 export default function ModelConfigModal({ isOpen, onClose, selectedModel, setSelectedModel }) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE } from '../../config/api';
+import { API_BASE } from '../../config/api.js';
 import { Terminal, Server, Play, CheckCircle, Code, Layers, RefreshCw } from 'lucide-react';
 
 export default function ToolExplorer({ onExecuteTool, currentConvId }) {

@@ -17,7 +17,7 @@ import {
   ShieldAlert,
   Edit3
 } from 'lucide-react';
-import { API_BASE } from '../../config/api';
+import { API_BASE } from '../../config/api.js';
 
 export default function EmailDashboard() {
   const [activeSubTab, setActiveSubTab] = useState('inbox'); // 'inbox' | 'compose' | 'drafts' | 'notifications'

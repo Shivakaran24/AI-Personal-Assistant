@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_BASE } from '../../config/api';
+import { API_BASE } from '../../config/api.js';
 import { 
   Calendar as CalendarIcon, 
   Clock, 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { API_BASE } from '../../config/api';
+import { API_BASE } from '../../config/api.js';
 import { Code, Terminal, Copy, Check, Play } from 'lucide-react';
 
 export default function CodeArtifactViewer() {

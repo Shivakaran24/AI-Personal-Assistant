@@ -10,12 +10,12 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (token && !user) {
+    if (token) {
       verifyToken(token);
     } else {
       setLoading(false);
     }
-  }, [token, user]);
+  }, [token]);
 
   const verifyToken = async (authToken) => {
     try {

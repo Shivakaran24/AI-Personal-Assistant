@@ -82,10 +82,6 @@ class CalendarStoreManager:
             return display_name, cls.CONTACT_DIRECTORY[lower_name]
 
         dynamic_email = f"{dynamic_local}@company.com"
-        from app.core.config import settings
-        if settings.EMAIL_USER and "@" in settings.EMAIL_USER:
-            dynamic_email = settings.EMAIL_USER
-
         return display_name, dynamic_email
 
     @classmethod
@@ -826,7 +822,7 @@ class BuiltinMCPServers:
             if html_body:
                 msg.attach(MIMEText(html_body, 'html'))
 
-            server = smtplib.SMTP(smtp_server, port, timeout=6)
+            server = smtplib.SMTP(smtp_server, port)
             server.starttls()
             server.login(email_user, email_pass.replace(" ", ""))
             text = msg.as_string()
@@ -865,19 +861,12 @@ class BuiltinMCPServers:
                 if tool_name in sensitive_tools or is_sensitive_calendar or is_create_calendar:
                     from app.planner.hitl_manager import hitl_manager
                     
-                    disp_name = None
-                    email_res = None
-
                     if tool_name == "gmail_send_message":
                         action_type = "send_email"
-                        disp_name = str(args.get("to", "Recipient"))
-                        email_res = str(args.get("to", ""))
                         title = f"Send Outbound Email to '{args.get('to')}'"
                         desc = f"Subject: {args.get('subject')}\nRecipient: {args.get('to')}"
                     elif tool_name == "email_send_notification":
                         action_type = "send_notification"
-                        disp_name = str(args.get("to", "Recipient"))
-                        email_res = str(args.get("to", ""))
                         title = f"Dispatch Notification to '{args.get('to')}'"
                         desc = f"Subject: {args.get('subject')}\nChannel: {args.get('channel', 'email')}"
                     elif tool_name == "calendar_create_event":
@@ -1225,103 +1214,50 @@ class BuiltinMCPServers:
                     }
                 }
 
-            elif tool_name in ["gmail_send_message", "email_send_notification", "send_email", "gmail_draft_message"]:
-                # Dynamic Multi-Recipient Extraction: Handles lists, comma-separated strings, or single addresses
-                raw_recipients = []
-                for k in ["to", "recipients", "attendees", "other_attendees", "person", "recipient", "attendee"]:
-                    val = args.get(k)
-                    if not val:
-                        continue
-                    if isinstance(val, list):
-                        for item in val:
-                            if isinstance(item, str):
-                                raw_recipients.extend([x.strip() for x in item.split(",") if x.strip()])
-                            elif isinstance(item, dict):
-                                addr = item.get("email") or item.get("address") or item.get("name")
-                                if addr:
-                                    raw_recipients.append(str(addr).strip())
-                    elif isinstance(val, str):
-                        raw_recipients.extend([x.strip() for x in val.split(",") if x.strip()])
+            elif tool_name == "gmail_send_message":
+                to = args.get("to")
+                subject = args.get("subject")
+                body = args.get("body")
 
-                recipients = []
-                for r in raw_recipients:
-                    _, resolved_email = CalendarStoreManager.resolve_person_email(r)
-                    target_addr = resolved_email or r
-                    if target_addr and target_addr not in recipients:
-                        recipients.append(target_addr)
+                if not to or not body:
+                    return {"status": "error", "message": "'to' and 'body' parameters are required."}
 
-                if not recipients:
-                    return {"status": "error", "message": "No recipient email addresses provided in the action payload."}
+                # Auto-expand brief prompts into professional emails if necessary
+                if len(body.split()) < 15 and not any(k in body.lower() for k in ["hi ", "dear ", "best regards", "sincerely", "regards"]):
+                    recipient_name = to.split("@")[0].replace(".", " ").replace("_", " ").title() if "@" in to else "Team"
+                    clean_b = body.strip(". ")
+                    body = (
+                        f"Hi {recipient_name},\n\n"
+                        f"I hope this message finds you well.\n\n"
+                        f"I am reaching out regarding the following:\n"
+                        f"• {clean_b.capitalize()}.\n\n"
+                        f"Please feel free to reply or let me know if you have any questions.\n\n"
+                        f"Best regards,\n"
+                        f"Sent via AI Assistant"
+                    )
 
-                subject = args.get("subject") or "Notification from AI Assistant"
-                body = args.get("body") or args.get("message") or args.get("content") or "You have received a new notification."
-                channel = args.get("channel", "email")
+                if not subject or subject == "Update from Assistant":
+                    subject = f"Regarding: {body.splitlines()[0][:40]}"
 
                 from app.core.config import settings
-                dispatch_results = []
 
-                for target_to in recipients:
-                    # Auto-expand brief prompts into professional emails if necessary
-                    recip_body = body
-                    if len(recip_body.split()) < 15 and not any(kw in recip_body.lower() for kw in ["hi ", "dear ", "best regards", "sincerely", "regards"]):
-                        recipient_name = str(target_to).split("@")[0].replace(".", " ").replace("_", " ").title() if "@" in str(target_to) else "Team"
-                        clean_b = recip_body.strip(". ")
-                        recip_body = (
-                            f"Hi {recipient_name},\n\n"
-                            f"I hope this message finds you well.\n\n"
-                            f"I am reaching out regarding the following:\n"
-                            f"• {clean_b.capitalize()}.\n\n"
-                            f"Please feel free to reply or let me know if you have any questions.\n\n"
-                            f"Best regards,\n"
-                            f"Google Workspace AI Assistant"
-                        )
-
-                    recip_subject = subject
-                    if not recip_subject or recip_subject == "Update from Assistant":
-                        recip_subject = f"Regarding: {recip_body.splitlines()[0][:40]}"
-
-                    # 1. Log notification in EmailStoreManager for outbox tracking
-                    EmailStoreManager.log_notification(to=str(target_to), subject=recip_subject, body=recip_body, channel=channel)
-
-                    # 2. Broadcast real-time WebSocket push event
-                    try:
-                        from app.core.websocket_manager import ws_manager
-                        ws_manager.broadcast_sync("notification_received", {
-                            "to": str(target_to),
-                            "subject": recip_subject,
-                            "body": recip_body,
-                            "channel": channel,
-                            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        })
-                    except Exception:
-                        pass
-
-                    # 3. Dispatch live SMTP email if credentials exist
-                    smtp_res = None
-                    if settings.EMAIL_USER and settings.EMAIL_PASSWORD:
-                        smtp_res = BuiltinMCPServers._send_real_email(
-                            to=str(target_to),
-                            subject=recip_subject,
-                            body=recip_body,
-                            email_user=settings.EMAIL_USER,
-                            email_pass=settings.EMAIL_PASSWORD,
-                            smtp_server=getattr(settings, "SMTP_SERVER", "smtp.gmail.com"),
-                            port=getattr(settings, "SMTP_PORT", 587)
-                        )
-
-                    dispatch_results.append({
-                        "recipient": target_to,
-                        "status": "delivered" if (smtp_res and smtp_res.get("status") == "success") else "logged_in_outbox",
-                        "smtp_result": smtp_res
-                    })
+                if settings.EMAIL_USER and settings.EMAIL_PASSWORD:
+                    return BuiltinMCPServers._send_real_email(
+                        to=to,
+                        subject=subject,
+                        body=body,
+                        email_user=settings.EMAIL_USER,
+                        email_pass=settings.EMAIL_PASSWORD
+                    )
 
                 return {
-                    "status": "success",
-                    "mode": "multi_recipient_dispatch",
-                    "recipient_count": len(recipients),
-                    "recipients": recipients,
-                    "dispatched_notifications": dispatch_results,
-                    "message": f"Successfully dispatched notifications to {len(recipients)} recipient(s): {', '.join(recipients)}."
+                    "status": "configuration_required",
+                    "message": "To send real emails, valid EMAIL_USER and EMAIL_PASSWORD (App Password) are required in backend/.env.",
+                    "setup_instructions": {
+                        "step_1": "Add EMAIL_USER=your_email@gmail.com to backend/.env",
+                        "step_2": "Generate a Google App Password at https://myaccount.google.com/apppasswords and add EMAIL_PASSWORD=your_app_password",
+                        "step_3": "Restart the backend server."
+                    }
                 }
 
             elif tool_name == "calendar_list_events":
@@ -1394,6 +1330,9 @@ class BuiltinMCPServers:
                     target_addr = email_a or str(a).strip()
                     if target_addr and target_addr not in attendees_list:
                         attendees_list.append(target_addr)
+
+                if not attendees_list:
+                    attendees_list = ["dasari.shivakaran@gmail.com"]
 
                 # Save event to store
                 created_evt = CalendarStoreManager.create_event(

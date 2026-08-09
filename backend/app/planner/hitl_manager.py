@@ -93,47 +93,27 @@ class HumanInTheLoopManager:
         action["approved_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Execute the underlying tool logic via BuiltinMCPServers
-        import threading
         from app.mcp.builtin_servers import BuiltinMCPServers, EmailStoreManager
+        tool_res = BuiltinMCPServers.execute_tool(action["tool_name"], action["payload"], skip_hitl=True)
 
-        # Extract all targets dynamically (handles lists, comma-separated strings, or single addresses)
-        target_payload = action["payload"]
-        all_targets = []
-        for k in ["to", "recipients", "attendees", "other_attendees", "person", "recipient", "attendee"]:
-            v = target_payload.get(k)
-            if not v:
-                continue
-            if isinstance(v, list):
-                for item in v:
-                    if isinstance(item, str):
-                        all_targets.extend([x.strip() for x in item.split(",") if x.strip()])
-            elif isinstance(v, str):
-                all_targets.extend([x.strip() for x in v.split(",") if x.strip()])
+        # Dispatch system notification & email outbox entry
+        target_to = action["payload"].get("to") or action["payload"].get("attendees") or action["payload"].get("person") or "dasari.shivakaran@gmail.com"
+        if isinstance(target_to, list) and target_to:
+            target_to = target_to[0]
 
-        # 1. Execute tool & notifications synchronously to guarantee delivery & complete telemetry
-        try:
-            tool_res = BuiltinMCPServers.execute_tool(action["tool_name"], action["payload"], skip_hitl=True)
-            action["execution_result"] = tool_res
-        except Exception as e:
-            logger.error(f"Error executing approved HITL tool '{action['tool_name']}': {e}")
-            action["execution_result"] = {"status": "error", "message": str(e)}
+        notif_msg = f"HITL Approval Confirmed: Action '{action['title']}' was approved by supervisor and dispatched to recipient(s)."
+        EmailStoreManager.log_notification(
+            to=str(target_to),
+            subject=f"Notification Dispatched: {action['title']}",
+            body=notif_msg,
+            channel="email"
+        )
 
-        # 2. Log outbox notification for all target recipients
-        for target in list(dict.fromkeys(all_targets)):
-            notif_msg = f"HITL Approval Confirmed: Action '{action['title']}' was approved by supervisor and dispatched to recipient(s)."
-            EmailStoreManager.log_notification(
-                to=str(target),
-                subject=f"Notification Dispatched: {action['title']}",
-                body=notif_msg,
-                channel="email"
-            )
-
-        logger.info(f"Approved and executed HITL action '{action_id}' ({action['tool_name']}). Sent notifications to {len(all_targets)} recipient(s): {', '.join(all_targets)}.")
-
-        # 3. Append to history
+        action["execution_result"] = tool_res
         self.action_history.append(action)
 
-        # 4. Broadcast WebSocket push events for real-time UI updates
+        logger.info(f"Approved and executed HITL action '{action_id}' ({action['tool_name']}). Sent notifications to {target_to}.")
+
         try:
             from app.core.websocket_manager import ws_manager
             ws_manager.broadcast_sync("hitl_queue_updated", {
@@ -141,20 +121,14 @@ class HumanInTheLoopManager:
                 "action": action,
                 "summary": self.get_queue_summary()
             })
-            ws_manager.broadcast_sync("calendar_rsvp_updated", {
-                "type": "approved",
-                "action": action,
-                "summary": self.get_queue_summary()
-            })
         except Exception:
             pass
 
-        target_str = ", ".join(list(dict.fromkeys(all_targets))) if all_targets else "recipients"
         return {
             "status": "success",
-            "message": f"Action '{action_id}' approved & executed. Notification dispatched to {target_str}.",
+            "message": f"Action '{action_id}' approved & executed. Email notification dispatched to {target_to}.",
             "action": action,
-            "result": action.get("execution_result", {})
+            "result": tool_res
         }
 
     def edit_and_approve(self, action_id: str, edits: Dict[str, Any]) -> Dict[str, Any]:

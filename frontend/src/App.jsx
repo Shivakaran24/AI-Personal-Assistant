@@ -33,14 +33,7 @@ function AppContent() {
     if (user && token) {
       fetchConversations();
       fetchPendingCount();
-      const interval = setInterval(fetchPendingCount, 10000);
       return () => clearInterval(interval);
-    } else {
-      setConversations([]);
-      setCurrentConvId(null);
-      setMessages([]);
-      setPendingCount(0);
-      setActiveTab('chat');
     }
   }, [user, token]);
 
@@ -436,12 +429,6 @@ function AppContent() {
 
   // 1. Auth loading state
   const [showAuth, setShowAuth] = useState(false);
-
-  useEffect(() => {
-    if (!user) {
-      setShowAuth(false);
-    }
-  }, [user]);
 
   if (authLoading) {
     return (

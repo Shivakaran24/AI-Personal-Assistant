@@ -865,12 +865,19 @@ class BuiltinMCPServers:
                 if tool_name in sensitive_tools or is_sensitive_calendar or is_create_calendar:
                     from app.planner.hitl_manager import hitl_manager
                     
+                    disp_name = None
+                    email_res = None
+
                     if tool_name == "gmail_send_message":
                         action_type = "send_email"
+                        disp_name = str(args.get("to", "Recipient"))
+                        email_res = str(args.get("to", ""))
                         title = f"Send Outbound Email to '{args.get('to')}'"
                         desc = f"Subject: {args.get('subject')}\nRecipient: {args.get('to')}"
                     elif tool_name == "email_send_notification":
                         action_type = "send_notification"
+                        disp_name = str(args.get("to", "Recipient"))
+                        email_res = str(args.get("to", ""))
                         title = f"Dispatch Notification to '{args.get('to')}'"
                         desc = f"Subject: {args.get('subject')}\nChannel: {args.get('channel', 'email')}"
                     elif tool_name == "calendar_create_event":

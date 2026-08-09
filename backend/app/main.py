@@ -33,14 +33,52 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Enable CORS for Frontend UI
+# Enable CORS for Frontend UI (Vercel Preview & Production Deployments + Localhost)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://ai-personal-assistant-sage.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173"
+    ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Global CORS Header Middleware (Guarantees CORS headers on 404, 500, OPTIONS & error responses)
+@app.middleware("http")
+async def add_cors_headers_to_all_responses(request, call_next):
+    if request.method == "OPTIONS":
+        from fastapi.responses import Response
+        origin = request.headers.get("origin", "*")
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+            }
+        )
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        from fastapi.responses import JSONResponse
+        response = JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": str(exc)}
+        )
+
+    origin = request.headers.get("origin")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 # Include Routers
 app.include_router(auth_router, prefix=settings.API_PREFIX)

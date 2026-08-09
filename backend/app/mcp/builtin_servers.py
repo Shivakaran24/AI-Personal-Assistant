@@ -82,6 +82,10 @@ class CalendarStoreManager:
             return display_name, cls.CONTACT_DIRECTORY[lower_name]
 
         dynamic_email = f"{dynamic_local}@company.com"
+        from app.core.config import settings
+        if settings.EMAIL_USER and "@" in settings.EMAIL_USER:
+            dynamic_email = settings.EMAIL_USER
+
         return display_name, dynamic_email
 
     @classmethod

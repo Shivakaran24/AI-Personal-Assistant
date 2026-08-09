@@ -94,11 +94,11 @@ export default function ApprovalDashboard() {
       if (res.ok) {
         const data = await res.json();
         const resObj = data.result || data.action?.payload || {};
-        const atts = resObj.attendees || resObj.to || resObj.person || [];
-        const attListStr = Array.isArray(atts) ? atts.join(', ') : String(atts);
+        const rawRecip = resObj.recipients || resObj.attendees || resObj.to || resObj.person || [];
+        const attListStr = Array.isArray(rawRecip) ? rawRecip.join(', ') : String(rawRecip);
         setToast({
           type: 'success',
-          message: `⚡ Action Approved & Executed! HTML Email Invitation & Notification dispatched to: ${attListStr || 'attendees'}.`
+          message: `⚡ Action Approved & Executed! Dynamic Notification & Email dispatched to ${Array.isArray(rawRecip) ? rawRecip.length : 1} recipient(s): ${attListStr || 'all recipients'}.`
         });
         setEditingAction(null);
         setPendingActions(prev => prev.filter(a => a.id !== actionId));

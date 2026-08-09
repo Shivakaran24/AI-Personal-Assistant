@@ -96,9 +96,19 @@ class HumanInTheLoopManager:
         import threading
         from app.mcp.builtin_servers import BuiltinMCPServers, EmailStoreManager
 
-        target_to = action["payload"].get("to") or action["payload"].get("attendees") or action["payload"].get("person") or "dasari.shivakaran@gmail.com"
-        if isinstance(target_to, list) and target_to:
-            target_to = target_to[0]
+        # Extract all targets dynamically (handles lists, comma-separated strings, or single addresses)
+        target_payload = action["payload"]
+        all_targets = []
+        for k in ["to", "recipients", "attendees", "other_attendees", "person", "recipient", "attendee"]:
+            v = target_payload.get(k)
+            if not v:
+                continue
+            if isinstance(v, list):
+                for item in v:
+                    if isinstance(item, str):
+                        all_targets.extend([x.strip() for x in item.split(",") if x.strip()])
+            elif isinstance(v, str):
+                all_targets.extend([x.strip() for x in v.split(",") if x.strip()])
 
         # Execute tool and notifications synchronously/asynchronously to provide instant UI response (<20ms)
         def _execute_and_notify():
@@ -109,15 +119,16 @@ class HumanInTheLoopManager:
                 logger.error(f"Error executing approved HITL tool '{action['tool_name']}': {e}")
                 action["execution_result"] = {"status": "error", "message": str(e)}
 
-            notif_msg = f"HITL Approval Confirmed: Action '{action['title']}' was approved by supervisor and dispatched to recipient(s)."
-            EmailStoreManager.log_notification(
-                to=str(target_to),
-                subject=f"Notification Dispatched: {action['title']}",
-                body=notif_msg,
-                channel="email"
-            )
+            for target in list(dict.fromkeys(all_targets)):
+                notif_msg = f"HITL Approval Confirmed: Action '{action['title']}' was approved by supervisor and dispatched to recipient(s)."
+                EmailStoreManager.log_notification(
+                    to=str(target),
+                    subject=f"Notification Dispatched: {action['title']}",
+                    body=notif_msg,
+                    channel="email"
+                )
 
-            logger.info(f"Approved and executed HITL action '{action_id}' ({action['tool_name']}). Sent notifications to {target_to}.")
+            logger.info(f"Approved and executed HITL action '{action_id}' ({action['tool_name']}). Sent notifications to {len(all_targets)} recipient(s): {', '.join(all_targets)}.")
 
             try:
                 from app.core.websocket_manager import ws_manager

@@ -162,9 +162,10 @@ class HumanInTheLoopManager:
         except Exception:
             pass
 
+        target_str = ", ".join(list(dict.fromkeys(all_targets))) if all_targets else "recipients"
         return {
             "status": "success",
-            "message": f"Action '{action_id}' approved & executed. Email notification dispatched to {target_to}.",
+            "message": f"Action '{action_id}' approved & executed. Notification dispatched to {target_str}.",
             "action": action
         }
 

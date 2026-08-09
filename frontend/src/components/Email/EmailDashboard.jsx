@@ -145,17 +145,23 @@ export default function EmailDashboard() {
         if (data.status === 'pending_approval') {
           setSendResult({
             type: 'hitl',
-            message: `Outbound email queued for Human-in-the-Loop review! Please approve or edit in the HITL Approval Queue.`
+            message: `Outbound email queued for Human-in-the-Loop review! Open the 'Human-in-the-Loop Approval Queue' tab to approve.`
+          });
+        } else if (data.mode === 'live_smtp' || data.result?.mode === 'live_smtp') {
+          setSendResult({
+            type: 'success',
+            message: `⚡ Real email successfully dispatched to '${composeTo}' via Gmail SMTP!`
           });
         } else {
           setSendResult({
             type: 'success',
-            message: data.message || `Email sent successfully to '${composeTo}'.`
+            message: `📩 Notification logged in Outbox & delivered in-app to '${composeTo}'. (To deliver real SMTP emails directly to external Gmail/Outlook inboxes, set EMAIL_USER & App Password in backend/.env)`
           });
         }
         setComposeTo('');
         setComposeSubject('');
         setComposeBody('');
+        fetchNotifications();
       }
     } catch (err) {
       setSendResult({

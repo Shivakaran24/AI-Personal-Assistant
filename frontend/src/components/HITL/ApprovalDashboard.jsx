@@ -94,12 +94,21 @@ export default function ApprovalDashboard() {
       if (res.ok) {
         const data = await res.json();
         const resObj = data.result || data.action?.payload || {};
+        const isSmtp = data.result?.mode === 'live_smtp' || data.result?.dispatched_notifications?.some(n => n.status === 'delivered');
         const rawRecip = resObj.recipients || resObj.attendees || resObj.to || resObj.person || [];
         const attListStr = Array.isArray(rawRecip) ? rawRecip.join(', ') : String(rawRecip);
-        setToast({
-          type: 'success',
-          message: `⚡ Action Approved & Executed! Dynamic Notification & Email dispatched to ${Array.isArray(rawRecip) ? rawRecip.length : 1} recipient(s): ${attListStr || 'all recipients'}.`
-        });
+
+        if (isSmtp) {
+          setToast({
+            type: 'success',
+            message: `⚡ Action Approved & Executed! Real HTML email invitation sent to ${attListStr || 'attendees'} via Gmail SMTP.`
+          });
+        } else {
+          setToast({
+            type: 'success',
+            message: `⚡ Action Approved & Executed! In-app notification & outbox logged for ${attListStr || 'attendees'}. (Note: Add EMAIL_USER & App Password to backend/.env for real SMTP delivery)`
+          });
+        }
         setEditingAction(null);
         setPendingActions(prev => prev.filter(a => a.id !== actionId));
         setSummary(prev => ({
